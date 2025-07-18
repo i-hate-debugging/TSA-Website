@@ -1,37 +1,45 @@
-// Supabase Configuration
-const SUPABASE_URL = 'https://riovrrxkeieujbjrwiwq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpb3ZycnhrZWlldWpianJ3aXdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MTg5MTksImV4cCI6MjA2NTE5NDkxOX0.w7otW-sRcUh2mc_O1FejOhcPW81YDM0s1aPtO2yIaOo';
+// Supabase Configuration and Helper Functions - Optimized with Singleton Pattern
 
-// Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-console.log('Supabase client initialized:', supabase);
-
-// Test Supabase connection
-async function testSupabaseConnection() {
-    try {
-        console.log('Testing Supabase connection...');
-        const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
-        if (error) {
-            console.error('Supabase connection test failed:', error);
-        } else {
-            console.log('Supabase connection test successful');
-        }
-    } catch (err) {
-        console.error('Supabase connection test error:', err);
+(function() {
+    'use strict';
+    
+    // Check if Supabase is already initialized (singleton pattern)
+    if (window.supabaseInitialized) {
+        console.log('Supabase already initialized, skipping...');
+        return;
     }
-}
-
-// Run connection test
-testSupabaseConnection();
-
-// Authentication functions
-const auth = {
-    // Sign up new user
+    
+    // Wait for environment configuration
+    function waitForEnvConfig(callback, maxRetries = 50) {
+        if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY && window.envReady) {
+            callback();
+        } else if (maxRetries > 0) {
+            requestAnimationFrame(() => waitForEnvConfig(callback, maxRetries - 1));
+        } else {
+            console.error('Supabase configuration timeout. Environment variables not available.');
+        }
+    }
+    
+    waitForEnvConfig(() => {
+        // Initialize Supabase client only once
+        if (!window.supabase) {
+            if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+                console.error('Supabase not properly configured. Please check your environment variables.');
+                return;
+            }
+            
+            console.log('Creating Supabase client...');
+            window.supabase = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        }
+        
+        // Authentication helper functions (singleton)
+        if (!window.supabaseAuth) {
+            window.supabaseAuth = {
+                // Sign up a new user
     async signUp(userData) {
-        console.log('Auth.signUp called with:', userData);
-        try {
-            const { data, error } = await supabase.auth.signUp({
+                    console.log('Signing up user:', { email: userData.email, ...userData });
+                    
+                    const { data, error } = await window.supabase.auth.signUp({
                 email: userData.email,
                 password: userData.password,
                 options: {
@@ -46,121 +54,241 @@ const auth = {
                 }
             });
 
-            console.log('Supabase auth.signUp response:', { data, error });
-            if (error) throw error;
-            return { data, error: null };
-        } catch (error) {
-            console.error('Auth.signUp error:', error);
-            return { data: null, error };
-        }
-    },
-
-    // Sign in existing user
+                    return { data, error };
+                },
+                
+                // Sign in an existing user
     async signIn(email, password) {
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+                    console.log('Signing in user:', email);
+                    
+                    const { data, error } = await window.supabase.auth.signInWithPassword({
                 email: email,
                 password: password
             });
 
-            if (error) throw error;
-            return { data, error: null };
-        } catch (error) {
-            return { data: null, error };
-        }
-    },
-
-    // Sign out user
+                    return { data, error };
+                },
+                
+                // Sign out current user
     async signOut() {
-        try {
-            const { error } = await supabase.auth.signOut();
-            if (error) throw error;
-            return { error: null };
-        } catch (error) {
+                    console.log('Signing out user');
+                    
+                    const { error } = await window.supabase.auth.signOut();
             return { error };
-        }
     },
 
     // Get current user
     async getCurrentUser() {
-        try {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (error) throw error;
-            return { user, error: null };
-        } catch (error) {
-            return { user: null, error };
+                    const { data: { user }, error } = await window.supabase.auth.getUser();
+                    return { user, error };
+                },
+                
+                // Listen for auth state changes
+                onAuthStateChange(callback) {
+                    return window.supabase.auth.onAuthStateChange(callback);
+                }
+            };
         }
-    },
-
-    // Check if user is authenticated
-    async isAuthenticated() {
-        const { user } = await this.getCurrentUser();
-        return !!user;
-    }
-};
-
-// Database functions
-const database = {
-    // Insert user profile data
+        
+        // Database helper functions (singleton)
+        if (!window.supabaseDB) {
+            window.supabaseDB = {
+                // Insert user profile
     async insertUserProfile(userId, userData) {
-        try {
-            const { data, error } = await supabase
+                    console.log('Inserting user profile:', { userId, userData });
+                    
+                    const { data, error } = await window.supabase
                 .from('user_profiles')
-                .insert([
-                    {
+                        .insert([{
                         user_id: userId,
                         first_name: userData.firstName,
                         last_name: userData.lastName,
                         email: userData.email,
-                        grade: userData.grade,
+                            grade: parseInt(userData.grade),
                         phone: userData.phone,
                         parent_email: userData.parentEmail,
-                        parent_phone: userData.parentPhone,
-                        created_at: new Date().toISOString()
-                    }
-                ]);
-
-            if (error) throw error;
-            return { data, error: null };
-        } catch (error) {
-            return { data: null, error };
-        }
+                            parent_phone: userData.parentPhone
+                        }])
+                        .select();
+                    
+                    return { data, error };
     },
 
     // Get user profile
     async getUserProfile(userId) {
-        try {
-            const { data, error } = await supabase
+                    const { data, error } = await window.supabase
                 .from('user_profiles')
                 .select('*')
                 .eq('user_id', userId)
                 .single();
 
-            if (error) throw error;
-            return { data, error: null };
-        } catch (error) {
-            return { data: null, error };
-        }
+                    return { data, error };
     },
 
     // Update user profile
     async updateUserProfile(userId, updates) {
-        try {
-            const { data, error } = await supabase
+                    const { data, error } = await window.supabase
                 .from('user_profiles')
                 .update(updates)
+                        .eq('user_id', userId)
+                        .select();
+                    
+                    return { data, error };
+                },
+                
+                // Get all users (admin function)
+                async getAllUsers() {
+                    const { data, error } = await window.supabase
+                        .from('user_profiles')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    
+                    return { data, error };
+                },
+                
+                // Delete user (admin function)
+                async deleteUser(userId) {
+                    const { data, error } = await window.supabase
+                        .from('user_profiles')
+                        .delete()
+                        .eq('user_id', userId);
+                    
+                    return { data, error };
+                },
+                
+                // Event functions
+                async getAllEvents() {
+                    const { data, error } = await window.supabase
+                        .from('events')
+                        .select('*')
+                        .order('event_date', { ascending: true });
+                    
+                    return { data, error };
+                },
+                
+                async createEvent(eventData) {
+                    const { data, error } = await window.supabase
+                        .from('events')
+                        .insert([eventData])
+                        .select();
+                    
+                    return { data, error };
+                },
+                
+                async updateEvent(eventId, updates) {
+                    const { data, error } = await window.supabase
+                        .from('events')
+                        .update(updates)
+                        .eq('id', eventId)
+                        .select();
+                    
+                    return { data, error };
+                },
+                
+                async deleteEvent(eventId) {
+                    const { data, error } = await window.supabase
+                        .from('events')
+                        .delete()
+                        .eq('id', eventId);
+                    
+                    return { data, error };
+                },
+                
+                // Event registration functions
+                async registerForEvent(eventId, userId) {
+                    const { data, error } = await window.supabase
+                        .from('event_registrations')
+                        .insert([{
+                            event_id: eventId,
+                            user_id: userId
+                        }])
+                        .select();
+                    
+                    return { data, error };
+                },
+                
+                async unregisterFromEvent(eventId, userId) {
+                    const { data, error } = await window.supabase
+                        .from('event_registrations')
+                        .delete()
+                        .eq('event_id', eventId)
+                        .eq('user_id', userId);
+                    
+                    return { data, error };
+                },
+                
+                async getEventRegistrations(eventId) {
+                    const { data, error } = await window.supabase
+                        .from('event_registrations')
+                        .select(`
+                            *,
+                            user_profiles (
+                                first_name,
+                                last_name,
+                                email,
+                                grade
+                            )
+                        `)
+                        .eq('event_id', eventId);
+                    
+                    return { data, error };
+                },
+                
+                async getUserRegistrations(userId) {
+                    const { data, error } = await window.supabase
+                        .from('event_registrations')
+                        .select(`
+                            *,
+                            events (
+                                title,
+                                description,
+                                event_date,
+                                location
+                            )
+                        `)
                 .eq('user_id', userId);
 
-            if (error) throw error;
-            return { data, error: null };
-        } catch (error) {
-            return { data: null, error };
+                    return { data, error };
+                }
+            };
         }
-    }
-};
-
-// Utility functions
-const utils = {
+        
+        // Utility functions (singleton)
+        if (!window.supabaseUtils) {
+            window.supabaseUtils = {
+                // Email validation
+                isValidEmail(email) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    return emailRegex.test(email);
+                },
+                
+                // Phone validation
+                isValidPhone(phone) {
+                    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+                    const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+                    return cleanPhone.length >= 10 && phoneRegex.test(cleanPhone);
+                },
+                
+                // Format date
+                formatDate(dateString) {
+                    return new Date(dateString).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                },
+                
+                // Format date and time
+                formatDateTime(dateString) {
+                    return new Date(dateString).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+                },
+                
     // Show notification
     showNotification(message, type = 'info') {
         // Remove existing notifications
@@ -178,11 +306,18 @@ const utils = {
         `;
         
         // Add styles
+                    const colors = {
+                        success: '#4caf50',
+                        error: '#f44336',
+                        info: '#2196f3',
+                        warning: '#ff9800'
+                    };
+                    
         notification.style.cssText = `
             position: fixed;
             top: 100px;
             right: 20px;
-            background: ${type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#2196f3'};
+                        background: ${colors[type] || colors.info};
             color: white;
             padding: 1rem 1.5rem;
             border-radius: 8px;
@@ -191,6 +326,7 @@ const utils = {
             transform: translateX(100%);
             transition: transform 0.3s ease;
             max-width: 400px;
+                        font-size: 0.9rem;
         `;
         
         notification.querySelector('.notification-content').style.cssText = `
@@ -233,20 +369,39 @@ const utils = {
         }, 5000);
     },
 
-    // Validate email format
-    isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    },
-
-    // Validate phone format
-    isValidPhone(phone) {
-        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-        return phoneRegex.test(phone.replace(/\s/g, ''));
-    }
-};
-
-// Export for use in other files
-window.supabaseAuth = auth;
-window.supabaseDB = database;
-window.supabaseUtils = utils; 
+                // Debounce function
+                debounce(func, wait) {
+                    let timeout;
+                    return function executedFunction(...args) {
+                        const later = () => {
+                            clearTimeout(timeout);
+                            func(...args);
+                        };
+                        clearTimeout(timeout);
+                        timeout = setTimeout(later, wait);
+                    };
+                },
+                
+                // Generate UUID
+                generateUUID() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        const r = Math.random() * 16 | 0;
+                        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                }
+            };
+        }
+        
+        // Mark as initialized to prevent re-initialization
+        window.supabaseInitialized = true;
+        
+        console.log('Supabase configuration loaded successfully (singleton)');
+        console.log('Available functions:', {
+            auth: Object.keys(window.supabaseAuth),
+            db: Object.keys(window.supabaseDB),
+            utils: Object.keys(window.supabaseUtils)
+        });
+    });
+    
+})(); 

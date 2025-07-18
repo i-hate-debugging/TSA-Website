@@ -4,84 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Events - TSA Technology Student Association</title>
+    
     <link rel="stylesheet" href="css/events.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Simple, single script initialization -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/app-init.js"></script>
 </head>
 <body>
-    <script>
-        // Load environment configuration first
-        function loadEnvConfig() {
-            const script = document.createElement('script');
-            script.src = 'js/env-config.js';
-            document.head.appendChild(script);
-            
-            script.onload = function() {
-                // Wait for environment to be ready, then load Supabase config
-                setTimeout(loadSupabaseConfig, 100);
-            };
-        }
-        
-        // Wait for Supabase to load before loading our config
-        function loadSupabaseConfig() {
-            if (typeof window.supabase !== 'undefined' && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-                const script = document.createElement('script');
-                script.src = 'js/supabase-config.js';
-                document.head.appendChild(script);
-                
-                // After config is loaded, set up auth state
-                script.onload = function() {
-                    // Check authentication state on page load
-                    document.addEventListener('DOMContentLoaded', async function() {
-                        const { user } = await supabaseAuth.getCurrentUser();
-                        updateNavigationForAuth(user);
-                    });
-                    
-                    // Listen for auth state changes
-                    supabase.auth.onAuthStateChange(async (event, session) => {
-                        updateNavigationForAuth(session?.user);
-                    });
-                    
-                    function updateNavigationForAuth(user) {
-                        const signInLink = document.querySelector('a[href="signin.html"]');
-                        const signUpLink = document.querySelector('a[href="signup.html"]');
-                        
-                        if (user) {
-                            // User is signed in
-                            if (signInLink) {
-                                signInLink.innerHTML = 'Dashboard';
-                                signInLink.href = '#dashboard';
-                            }
-                            if (signUpLink) {
-                                signUpLink.innerHTML = 'Sign Out';
-                                signUpLink.href = '#';
-                                signUpLink.addEventListener('click', async (e) => {
-                                    e.preventDefault();
-                                    await supabaseAuth.signOut();
-                                    window.location.reload();
-                                });
-                            }
-                        } else {
-                            // User is signed out
-                            if (signInLink) {
-                                signInLink.innerHTML = 'Sign In';
-                                signInLink.href = 'signin.html';
-                            }
-                            if (signUpLink) {
-                                signUpLink.innerHTML = 'Sign Up';
-                                signUpLink.href = 'signup.html';
-                            }
-                        }
-                    }
-                };
-            } else {
-                setTimeout(loadSupabaseConfig, 100);
-            }
-        }
-        
-        // Start loading process
-        loadEnvConfig();
-    </script>
 
     <header class="header">
         <nav class="navbar">
