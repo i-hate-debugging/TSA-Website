@@ -4,6 +4,8 @@ A modern, responsive website for the Technology Student Association with user au
 
 ## 🚀 Quick Start
 
+ - ADMIN LOGIN: bothellhstsa@gmail.com
+
 ### Option 1: Automated Setup (Recommended)
 ```bash
 # Run the setup script
