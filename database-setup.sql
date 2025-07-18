@@ -19,21 +19,42 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 -- Create RLS (Row Level Security) policies
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can view their own profile
-CREATE POLICY "Users can view own profile" ON user_profiles
-    FOR SELECT USING (auth.uid() = user_id);
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can delete own profile" ON user_profiles;
 
--- Policy: Users can update their own profile
-CREATE POLICY "Users can update own profile" ON user_profiles
-    FOR UPDATE USING (auth.uid() = user_id);
+-- Policy: Admin can view all profiles, users can view their own
+CREATE POLICY "Admin and user profile access" ON user_profiles
+    FOR SELECT USING (
+        auth.email() = 'bothellhstsa@gmail.com' OR auth.uid() = user_id
+    );
 
--- Policy: Users can insert their own profile
-CREATE POLICY "Users can insert own profile" ON user_profiles
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- Policy: Admin can update all profiles, users can update their own
+CREATE POLICY "Admin and user profile update" ON user_profiles
+    FOR UPDATE USING (
+        auth.email() = 'bothellhstsa@gmail.com' OR auth.uid() = user_id
+    );
 
--- Policy: Users can delete their own profile
-CREATE POLICY "Users can delete own profile" ON user_profiles
-    FOR DELETE USING (auth.uid() = user_id);
+-- Policy: Admin can insert profiles, users can insert their own
+CREATE POLICY "Admin and user profile insert" ON user_profiles
+    FOR INSERT WITH CHECK (
+        auth.email() = 'bothellhstsa@gmail.com' OR auth.uid() = user_id
+    );
+
+-- Policy: Admin can delete all profiles, users can delete their own
+CREATE POLICY "Admin and user profile delete" ON user_profiles
+    FOR DELETE USING (
+        auth.email() = 'bothellhstsa@gmail.com' OR auth.uid() = user_id
+    );
+
+-- Drop existing triggers first (to avoid dependency issues)
+DROP TRIGGER IF EXISTS update_user_profiles_updated_at ON user_profiles;
+DROP TRIGGER IF EXISTS update_events_updated_at ON events;
+
+-- Drop existing function if it exists (now that triggers are gone)
+DROP FUNCTION IF EXISTS update_updated_at_column();
 
 -- Create function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -75,28 +96,43 @@ CREATE TABLE IF NOT EXISTS event_registrations (
 -- Enable RLS on events table
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing event policies if they exist
+DROP POLICY IF EXISTS "Anyone can view events" ON events;
+DROP POLICY IF EXISTS "Authenticated users can insert events" ON events;
+
 -- Policy: Anyone can view events
 CREATE POLICY "Anyone can view events" ON events
     FOR SELECT USING (true);
 
--- Policy: Only authenticated users can insert events (for admins)
-CREATE POLICY "Authenticated users can insert events" ON events
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+-- Policy: Only admin can manage events
+CREATE POLICY "Admin can manage events" ON events
+    FOR ALL USING (auth.email() = 'bothellhstsa@gmail.com');
 
 -- Enable RLS on event_registrations table
 ALTER TABLE event_registrations ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can view their own registrations
-CREATE POLICY "Users can view own registrations" ON event_registrations
-    FOR SELECT USING (auth.uid() = user_id);
+-- Drop existing registration policies if they exist
+DROP POLICY IF EXISTS "Users can view own registrations" ON event_registrations;
+DROP POLICY IF EXISTS "Users can register for events" ON event_registrations;
+DROP POLICY IF EXISTS "Users can update own registrations" ON event_registrations;
 
--- Policy: Users can register for events
-CREATE POLICY "Users can register for events" ON event_registrations
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- Policy: Admin can view all registrations, users can view their own
+CREATE POLICY "Admin and user registration access" ON event_registrations
+    FOR SELECT USING (
+        auth.email() = 'bothellhstsa@gmail.com' OR auth.uid() = user_id
+    );
 
--- Policy: Users can update their own registrations
-CREATE POLICY "Users can update own registrations" ON event_registrations
-    FOR UPDATE USING (auth.uid() = user_id);
+-- Policy: Admin can manage registrations, users can register for events
+CREATE POLICY "Admin and user registration management" ON event_registrations
+    FOR INSERT WITH CHECK (
+        auth.email() = 'bothellhstsa@gmail.com' OR auth.uid() = user_id
+    );
+
+-- Policy: Admin can update all registrations, users can update their own
+CREATE POLICY "Admin and user registration update" ON event_registrations
+    FOR UPDATE USING (
+        auth.email() = 'bothellhstsa@gmail.com' OR auth.uid() = user_id
+    );
 
 -- Create trigger for events updated_at
 CREATE TRIGGER update_events_updated_at 
