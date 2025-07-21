@@ -16,6 +16,210 @@ document.addEventListener('DOMContentLoaded', function() {
     waitForApp();
 });
 
+// ============================================================
+// CHATBOT FUNCTIONALITY
+// ============================================================
+
+let driveSync;
+let chatbot;
+let isInitialized = false;
+
+function initializeChatbot() {
+    if (isInitialized) return;
+    
+    console.log('Initializing chatbot...');
+    
+    // Initialize services
+    driveSync = new GoogleDriveSync();
+    chatbot = new GeminiChatbot();
+    
+    // Get DOM elements
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendChatBtn');
+    const syncBtn = document.getElementById('syncNotesBtn');
+    
+    if (!chatInput || !sendBtn || !syncBtn) {
+        console.error('Chatbot elements not found');
+        return;
+    }
+    
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    syncBtn.addEventListener('click', syncMeetingNotes);
+    
+    // Load initial data
+    loadChatHistory();
+    loadMeetingStats();
+    
+    isInitialized = true;
+    console.log('Chatbot initialized successfully');
+}
+
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendChatBtn');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Disable input during processing
+    input.disabled = true;
+    sendBtn.disabled = true;
+    
+    // Clear input
+    input.value = '';
+    
+    // Add user message to chat
+    addMessageToChat(message, 'user');
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    try {
+        // Get response from chatbot
+        const response = await chatbot.askQuestion(message);
+        
+        // Remove typing indicator
+        removeTypingIndicator();
+        
+        if (response.success) {
+            addMessageToChat(response.answer, 'bot');
+        } else {
+            addMessageToChat('Sorry, I encountered an error: ' + response.error, 'bot');
+        }
+    } catch (error) {
+        removeTypingIndicator();
+        addMessageToChat('Sorry, something went wrong. Please try again.', 'bot');
+        console.error('Chat error:', error);
+    } finally {
+        // Re-enable input
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+    }
+}
+
+function addMessageToChat(message, sender) {
+    const chatMessages = document.getElementById('chatMessages');
+    
+    // Remove welcome message if it exists
+    const welcomeMessage = chatMessages.querySelector('.welcome-message');
+    if (welcomeMessage && sender === 'user') {
+        welcomeMessage.remove();
+    }
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${sender}`;
+    
+    const avatar = sender === 'user' ? '👤' : '🤖';
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar ${sender}">${avatar}</div>
+        <div class="message-content ${sender}">${message}</div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTypingIndicator() {
+    const chatMessages = document.getElementById('chatMessages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-message bot typing-indicator-message';
+    typingDiv.innerHTML = `
+        <div class="message-avatar bot">🤖</div>
+        <div class="typing-indicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    `;
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const typingIndicator = document.querySelector('.typing-indicator-message');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+async function syncMeetingNotes() {
+    const syncBtn = document.getElementById('syncNotesBtn');
+    const originalText = syncBtn.textContent;
+    
+    syncBtn.textContent = 'Syncing...';
+    syncBtn.disabled = true;
+    
+    try {
+        const result = await driveSync.syncMeetingNotes();
+        
+        if (result.success) {
+            window.notify(`Successfully synced ${result.filesProcessed} meeting notes!`, 'success');
+            loadMeetingStats();
+        } else {
+            window.notify('Sync failed: ' + result.error, 'error');
+        }
+    } catch (error) {
+        window.notify('Sync failed: ' + error.message, 'error');
+        console.error('Sync error:', error);
+    } finally {
+        syncBtn.textContent = originalText;
+        syncBtn.disabled = false;
+    }
+}
+
+async function loadChatHistory() {
+    try {
+        const history = await chatbot.getChatHistory();
+        const chatMessages = document.getElementById('chatMessages');
+        
+        if (history.length > 0) {
+            // Clear welcome message
+            chatMessages.innerHTML = '';
+            
+            history.forEach(chat => {
+                addMessageToChat(chat.question, 'user');
+                addMessageToChat(chat.answer, 'bot');
+            });
+        }
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+    }
+}
+
+async function loadMeetingStats() {
+    try {
+        const stats = await driveSync.getMeetingStats();
+        
+        document.getElementById('totalNotes').textContent = stats.totalNotes;
+        document.getElementById('lastSync').textContent = stats.lastSync;
+        
+    } catch (error) {
+        console.error('Error loading meeting stats:', error);
+        document.getElementById('totalNotes').textContent = '0';
+        document.getElementById('lastSync').textContent = 'Error';
+    }
+}
+
+function askSampleQuestion(question) {
+    const input = document.getElementById('chatInput');
+    input.value = question;
+    sendMessage();
+}
+
+// Make function globally available for onclick handlers
+window.askSampleQuestion = askSampleQuestion;
+
 // Mobile menu functionality
 function initializeMobileMenu() {
     const hamburger = document.querySelector('.hamburger');
@@ -53,6 +257,11 @@ function initializeTabs() {
             // Add active class to clicked tab
             button.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+            
+            // Initialize chatbot when chatbot tab is opened
+            if (tabId === 'chatbot') {
+                setTimeout(initializeChatbot, 100);
+            }
         });
     });
 }

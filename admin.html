@@ -150,6 +150,7 @@
                     <button class="tab-btn active" data-tab="users">Members</button>
                     <button class="tab-btn" data-tab="events">Events</button>
                     <button class="tab-btn" data-tab="analytics">Analytics</button>
+                    <button class="tab-btn" data-tab="chatbot">Meeting Assistant</button>
                 </div>
 
                 <!-- Users Tab -->
@@ -262,6 +263,57 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Chatbot Tab -->
+                <div id="chatbot" class="tab-content">
+                    <div class="section-header">
+                        <h2>Meeting Assistant</h2>
+                        <button class="btn btn-primary" id="syncNotesBtn">Sync Google Drive</button>
+                    </div>
+                    
+                    <div class="chatbot-container">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="welcome-message">
+                                <h3>👋 Hello! I'm your TSA Meeting Assistant</h3>
+                                <p>Ask me about past meetings, summaries, or pending tasks.</p>
+                                <div class="sample-questions">
+                                    <h4>Try asking:</h4>
+                                    <button class="sample-btn" onclick="askSampleQuestion('What were the main decisions from last week\'s meeting?')">
+                                        What were the main decisions from last week's meeting?
+                                    </button>
+                                    <button class="sample-btn" onclick="askSampleQuestion('What tasks are pending from recent meetings?')">
+                                        What tasks are pending from recent meetings?
+                                    </button>
+                                    <button class="sample-btn" onclick="askSampleQuestion('Summarize the key points from this month\'s meetings')">
+                                        Summarize this month's meetings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-container">
+                            <div class="chat-input-wrapper">
+                                <input type="text" id="chatInput" placeholder="Ask about meetings, summaries, or tasks..." maxlength="500">
+                                <button id="sendChatBtn">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="meeting-stats">
+                        <div class="stat-item">
+                            <span id="totalNotes">-</span>
+                            <label>Meeting Notes</label>
+                        </div>
+                        <div class="stat-item">
+                            <span id="lastSync">Never</span>
+                            <label>Last Sync</label>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -353,6 +405,8 @@
         </div>
     </footer>
 
+    <script src="js/google-drive-sync.js"></script>
+    <script src="js/gemini-chatbot.js"></script>
     <script src="js/admin.js"></script>
 </body>
 </html> 

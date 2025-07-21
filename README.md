@@ -22,6 +22,7 @@ node setup.js
    ```env
    SUPABASE_URL=https://your-project-id.supabase.co
    SUPABASE_ANON_KEY=your_supabase_anon_key_here
+   GEMINI_API_KEY=your_gemini_api_key
    ```
 
 3. Copy the Supabase configuration template:

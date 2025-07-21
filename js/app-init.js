@@ -7,6 +7,12 @@
     window.SUPABASE_URL = 'https://riovrrxkeieujbjrwiwq.supabase.co'; // e.g., 'https://xxxxx.supabase.co'
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpb3ZycnhrZWlldWpianJ3aXdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MTg5MTksImV4cCI6MjA2NTE5NDkxOX0.w7otW-sRcUh2mc_O1FejOhcPW81YDM0s1aPtO2yIaOo'; // The anon/public key from your dashboard
     
+    // ⚠️ CHATBOT API CONFIGURATION ⚠️
+    // Add your API keys here - keep them secure in production
+    window.GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // Get from Google AI Studio
+    window.GOOGLE_DRIVE_API_KEY = 'YOUR_GOOGLE_DRIVE_API_KEY'; // Get from Google Cloud Console
+    window.GOOGLE_DRIVE_FOLDER_ID = 'YOUR_GOOGLE_DRIVE_FOLDER_ID'; // Your meeting notes folder ID
+    
     // Admin configuration
     const ADMIN_EMAIL = 'bothellhstsa@gmail.com';
     

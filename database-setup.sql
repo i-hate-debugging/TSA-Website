@@ -152,4 +152,57 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON user_profiles(email);
 CREATE INDEX IF NOT EXISTS idx_events_date ON events(event_date);
 CREATE INDEX IF NOT EXISTS idx_event_registrations_user_id ON event_registrations(user_id);
-CREATE INDEX IF NOT EXISTS idx_event_registrations_event_id ON event_registrations(event_id); 
+CREATE INDEX IF NOT EXISTS idx_event_registrations_event_id ON event_registrations(event_id);
+
+-- ============================================================
+-- CHATBOT FUNCTIONALITY TABLES
+-- ============================================================
+
+-- Meeting notes table for storing Google Drive meeting notes
+CREATE TABLE IF NOT EXISTS meeting_notes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    meeting_date DATE,
+    file_id TEXT UNIQUE, -- Google Drive file ID
+    last_modified TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Chat conversations table for storing chatbot interactions
+CREATE TABLE IF NOT EXISTS chat_conversations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS on chatbot tables
+ALTER TABLE meeting_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_conversations ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing chatbot policies if they exist
+DROP POLICY IF EXISTS "Admin only meeting notes" ON meeting_notes;
+DROP POLICY IF EXISTS "Admin only chat conversations" ON chat_conversations;
+
+-- Only admin can access meeting notes
+CREATE POLICY "Admin only meeting notes" ON meeting_notes
+    FOR ALL USING (auth.email() = 'bothellhstsa@gmail.com');
+
+-- Only admin can access chat conversations
+CREATE POLICY "Admin only chat conversations" ON chat_conversations
+    FOR ALL USING (auth.email() = 'bothellhstsa@gmail.com');
+
+-- Create triggers for chatbot tables
+CREATE TRIGGER update_meeting_notes_updated_at 
+    BEFORE UPDATE ON meeting_notes 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Create indexes for chatbot tables
+CREATE INDEX IF NOT EXISTS idx_meeting_notes_file_id ON meeting_notes(file_id);
+CREATE INDEX IF NOT EXISTS idx_meeting_notes_date ON meeting_notes(meeting_date);
+CREATE INDEX IF NOT EXISTS idx_chat_conversations_user_id ON chat_conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_conversations_date ON chat_conversations(created_at); 
