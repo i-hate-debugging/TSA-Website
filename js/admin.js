@@ -53,8 +53,7 @@ function initializeChatbot() {
     });
     syncBtn.addEventListener('click', syncMeetingNotes);
     
-    // Load initial data
-    loadChatHistory();
+    // Load meeting stats
     loadMeetingStats();
     
     isInitialized = true;
@@ -105,6 +104,66 @@ async function sendMessage() {
     }
 }
 
+function formatBotMessage(message) {
+    // Sanitize the input to prevent XSS
+    const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
+    
+    // Start with escaped HTML to prevent XSS
+    let formatted = escapeHtml(message);
+    
+    // Convert basic markdown-style formatting to HTML
+    
+    // Bold text (**text** or __text__)
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
+    
+    // Italic text (*text* or _text_)
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    formatted = formatted.replace(/_(.*?)_/g, '<em>$1</em>');
+    
+    // Convert line breaks to proper HTML
+    formatted = formatted.replace(/\n/g, '<br>');
+    
+    // Convert numbered lists (1. item)
+    formatted = formatted.replace(/^(\d+\.\s+)(.+)$/gm, '<li>$2</li>');
+    
+    // Convert bullet points (- item or * item)
+    formatted = formatted.replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>');
+    
+    // Wrap consecutive list items in proper list tags
+    formatted = formatted.replace(/(<li>.*?<\/li>)(\s*<br>\s*<li>.*?<\/li>)+/gs, (match) => {
+        // Check if this looks like a numbered list (contains digits)
+        const isNumbered = /^\s*<li>\d+/.test(match);
+        const listItems = match.replace(/<br>\s*/g, '');
+        
+        if (isNumbered) {
+            return `<ol>${listItems}</ol>`;
+        } else {
+            return `<ul>${listItems}</ul>`;
+        }
+    });
+    
+    // Handle remaining single list items
+    formatted = formatted.replace(/^<li>(.*?)<\/li>$/gm, '<ul><li>$1</li></ul>');
+    
+    // Convert paragraphs (double line breaks)
+    formatted = formatted.replace(/(<br>\s*){2,}/g, '</p><p>');
+    
+    // Wrap in paragraphs if there are any paragraph breaks
+    if (formatted.includes('</p><p>')) {
+        formatted = '<p>' + formatted + '</p>';
+    }
+    
+    // Clean up any empty paragraphs
+    formatted = formatted.replace(/<p>\s*<\/p>/g, '');
+    
+    return formatted;
+}
+
 function addMessageToChat(message, sender) {
     const chatMessages = document.getElementById('chatMessages');
     
@@ -119,9 +178,12 @@ function addMessageToChat(message, sender) {
     
     const avatar = sender === 'user' ? '👤' : '🤖';
     
+    // Format bot messages, keep user messages as plain text
+    const formattedMessage = sender === 'bot' ? formatBotMessage(message) : message;
+    
     messageDiv.innerHTML = `
         <div class="message-avatar ${sender}">${avatar}</div>
-        <div class="message-content ${sender}">${message}</div>
+        <div class="message-content ${sender}">${formattedMessage}</div>
     `;
     
     chatMessages.appendChild(messageDiv);
@@ -178,36 +240,30 @@ async function syncMeetingNotes() {
     }
 }
 
-async function loadChatHistory() {
-    try {
-        const history = await chatbot.getChatHistory();
-        const chatMessages = document.getElementById('chatMessages');
-        
-        if (history.length > 0) {
-            // Clear welcome message
-            chatMessages.innerHTML = '';
-            
-            history.forEach(chat => {
-                addMessageToChat(chat.question, 'user');
-                addMessageToChat(chat.answer, 'bot');
-            });
-        }
-    } catch (error) {
-        console.error('Error loading chat history:', error);
-    }
-}
+
 
 async function loadMeetingStats() {
     try {
-        const stats = await driveSync.getMeetingStats();
-        
-        document.getElementById('totalNotes').textContent = stats.totalNotes;
-        document.getElementById('lastSync').textContent = stats.lastSync;
+        // Get meeting notes count from database
+        const { data: notes, error } = await window.supabase
+            .from('meeting_notes')
+            .select('created_at')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const totalNotes = notes ? notes.length : 0;
+        const lastSync = notes && notes.length > 0 
+            ? new Date(notes[0].created_at).toLocaleDateString()
+            : 'Never';
+
+        document.getElementById('totalNotes').textContent = totalNotes;
+        document.getElementById('lastSync').textContent = lastSync;
         
     } catch (error) {
         console.error('Error loading meeting stats:', error);
         document.getElementById('totalNotes').textContent = '0';
-        document.getElementById('lastSync').textContent = 'Error';
+        document.getElementById('lastSync').textContent = 'Never';
     }
 }
 

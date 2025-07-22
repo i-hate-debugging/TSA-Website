@@ -9,9 +9,9 @@
     
     // ⚠️ CHATBOT API CONFIGURATION ⚠️
     // Add your API keys here - keep them secure in production
-    window.GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // Get from Google AI Studio
-    window.GOOGLE_DRIVE_API_KEY = 'YOUR_GOOGLE_DRIVE_API_KEY'; // Get from Google Cloud Console
-    window.GOOGLE_DRIVE_FOLDER_ID = 'YOUR_GOOGLE_DRIVE_FOLDER_ID'; // Your meeting notes folder ID
+    window.GEMINI_API_KEY = 'AIzaSyA5C4G-2KFy7m9aPfD8E7sksM604HWG63A'; // Get from Google AI Studio
+    window.GOOGLE_DRIVE_API_KEY = 'AIzaSyDDMloA7eQhixD1a39pc6NnYwWFo6a0zYU'; // Get from Google Cloud Console
+    window.GOOGLE_DRIVE_FOLDER_ID = '15VuKdKHQOaF8w9gkjaQjanb43RSZLtkI'; // Your meeting notes folder ID
     
     // Admin configuration
     const ADMIN_EMAIL = 'bothellhstsa@gmail.com';

@@ -964,6 +964,59 @@ body {
     border-bottom-left-radius: 4px;
 }
 
+/* Formatted content styles for bot messages */
+.message-content.bot strong {
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.message-content.bot em {
+    font-style: italic;
+    color: #4a5568;
+}
+
+.message-content.bot ul {
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+}
+
+.message-content.bot ol {
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+}
+
+.message-content.bot li {
+    margin: 0.25rem 0;
+    line-height: 1.4;
+}
+
+.message-content.bot p {
+    margin: 0.5rem 0;
+}
+
+.message-content.bot p:first-child {
+    margin-top: 0;
+}
+
+.message-content.bot p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content.bot br {
+    display: block;
+    margin: 0.25rem 0;
+}
+
+.message-content.bot code {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.125rem 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #2d3748;
+}
+
 .chat-input-container {
     padding: 1rem;
     background: white;
