@@ -79,34 +79,7 @@ body {
     align-items: center;
 }
 
-.nav-link {
-    color: #4a5568;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    position: relative;
-    overflow: hidden;
-    z-index: 10;
-    cursor: pointer;
-}
-
-.nav-link::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(49, 130, 206, 0.1), transparent);
-    transition: left 0.5s ease;
-    z-index: -1;
-    pointer-events: none;
-}
-
-.nav-link:hover::before {
+/*.nav-link:hover::before {
     left: 100%;
 }
 
@@ -121,7 +94,7 @@ body {
     background: linear-gradient(135deg, #edf2f7, #e2e8f0);
     color: #2d3748;
     box-shadow: 0 2px 8px rgba(49, 130, 206, 0.1);
-}
+}*/
 
 .signup-btn {
     background: linear-gradient(135deg, #4f8cff, #6a82fb, #a084ee);
@@ -159,7 +132,7 @@ body {
     position: absolute;
     top: -2px; left: -2px; right: -2px; bottom: -2px;
     border-radius: 10px;
-    background: linear-gradient(120deg, #4f8cff, #a084ee, #6a82fb, #4f8cff);
+    /*background: linear-gradient(120deg, #4f8cff, #a084ee, #6a82fb, #4f8cff);*/
     z-index: 0;
     opacity: 0.7;
     filter: blur(6px);
@@ -167,11 +140,11 @@ body {
     animation: shimmer 2.5s linear infinite;
 }
 
-@keyframes shimmer {
+/*@keyframes shimmer {
     0% { filter: blur(6px) brightness(1); opacity: 0.7; }
     50% { filter: blur(8px) brightness(1.2); opacity: 1; }
     100% { filter: blur(6px) brightness(1); opacity: 0.7; }
-}
+}*/
 
 .hamburger {
     display: none;
